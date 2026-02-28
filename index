@@ -1,0 +1,550 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Seguro · Google Sheets</title>
+    <!-- Chart.js para gráficos simples -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            background-color: #111827; /* Fundo escuro fallback */
+            color: #f1f5f9;
+        }
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('julius.gif') center/cover no-repeat;
+            opacity: 0.5;
+            z-index: -1;
+        }
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(17, 24, 39, 0.7); /* Preto com 70% opacidade */
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+            font-size: 1.8rem;
+            color: #f1f5f9;
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .sub {
+            color: #94a3b8;
+            margin-bottom: 30px;
+            border-left: 4px solid #6366f1;
+            padding-left: 16px;
+        }
+        .input-area {
+            background: rgba(31, 41, 55, 0.7);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 30px;
+            border: 1px solid #374151;
+        }
+        label {
+            font-weight: 500;
+            color: #d1d5db;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .link-input {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        input[type=text] {
+            flex: 1;
+            min-width: 280px;
+            padding: 14px 18px;
+            border: 2px solid #374151;
+            border-radius: 60px;
+            font-size: 1rem;
+            transition: 0.2s;
+            background: #1f2937;
+            color: #f1f5f9;
+        }
+        input[type=text]:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 60px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid #6366f1;
+        }
+        button:hover {
+            background: #4f46e5;
+            border-color: #4f46e5;
+        }
+        button:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .aviso {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 12px;
+            background: rgba(31, 41, 55, 0.7);
+            padding: 8px 16px;
+            border-radius: 40px;
+            display: inline-block;
+        }
+        .dashboard {
+            display: none;
+            opacity: 0;
+            transition: 0.3s;
+        }
+        .dashboard.visible {
+            display: block;
+            opacity: 1;
+        }
+        .top-info {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        .top-info span {
+            background: rgba(31, 41, 55, 0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: rgba(31, 41, 55, 0.7);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #374151;
+        }
+        .card h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+            margin: 0 0 8px 0;
+        }
+        .card .valor {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+        .grafico-container {
+            background: rgba(31, 41, 55, 0.7);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #374151;
+            margin-bottom: 30px;
+        }
+        .graficos-pie {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(31, 41, 55, 0.7);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        th {
+            background: #1f2937;
+            color: #d1d5db;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            padding: 14px 12px;
+            text-align: left;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #374151;
+            color: #f1f5f9;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .erro {
+            background: #ef4444;
+            color: #fee2e2;
+            padding: 14px 20px;
+            border-radius: 60px;
+            margin-top: 20px;
+            border: 1px solid #dc2626;
+            font-weight: 500;
+        }
+        .loading {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-top: 16px;
+            color: #6366f1;
+        }
+        .loading.visible {
+            display: flex;
+        }
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #374151;
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        .receitas-section {
+            margin-top: 40px;
+        }
+        .line-charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📊 Dashboard sob demanda</h1>
+    <div class="sub">
+        Cole o link da sua planilha Google Sheets. Os dados são processados localmente e nada é salvo.
+    </div>
+    <!-- Área de input do link -->
+    <div class="input-area">
+        <label for="sheetLink">🔗 Link da planilha (compartilhada como "qualquer pessoa com o link pode ler")</label>
+        <div class="link-input">
+            <input type="text" id="sheetLink" placeholder="https://docs.google.com/spreadsheets/d/1abc123.../edit?usp=sharing">
+            <button id="carregarBtn">📥 Carregar dashboard</button>
+        </div>
+        <div class="aviso">
+            ⚡ O link NÃO é armazenado em nenhum servidor. Tudo fica apenas na sua memória enquanto a página estiver aberta.
+        </div>
+        <div id="loading" class="loading">
+            <div class="spinner"></div> Buscando dados...
+        </div>
+        <div id="erro" class="erro" style="display: none;"></div>
+    </div>
+    <!-- Dashboard (inicialmente oculto) -->
+    <div id="dashboard" class="dashboard">
+        <!-- Informações topo -->
+        <div class="top-info" id="topInfo"></div>
+        <!-- Cards com indicadores -->
+        <div class="cards" id="cardsContainer"></div>
+        <!-- Gráficos de pizza -->
+        <div class="graficos-pie">
+            <div class="grafico-container">
+                <canvas id="graficoDespesas"></canvas>
+            </div>
+            <div class="grafico-container">
+                <canvas id="graficoRendas"></canvas>
+            </div>
+            <div class="grafico-container">
+                <canvas id="graficoBalanco"></canvas>
+            </div>
+        </div>
+        <!-- Tabela de dados -->
+        <h3 style="margin-bottom: 12px;">📋 Dados brutos (primeiras linhas)</h3>
+        <div style="overflow-x: auto;">
+            <table id="tabelaDados">
+                <thead id="tabelaHead">
+                    <tr></tr>
+                </thead>
+                <tbody id="tabelaBody"></tbody>
+            </table>
+        </div>
+        <!-- Seção Receitas com gráficos de linha -->
+        <div class="receitas-section">
+            <h2>📈 Evolução das Receitas</h2>
+            <div class="line-charts" id="lineChartsContainer"></div>
+        </div>
+    </div>
+    <footer>
+        🔒 Nenhum dado sai do seu navegador. Código aberto no GitHub · use sua própria chave de API (opcional)
+    </footer>
+</div>
+<script>
+    // ATENÇÃO: Você precisa de uma chave de API do Google Sheets.
+    // Crie uma em https://console.cloud.google.com/apis/credentials
+    // e restrinja-a ao domínio do seu GitHub Pages (ex: usuario.github.io).
+    const API_KEY = 'AIzaSyCcz34zSm9E_H-42cXOMPhpZGgGjbvSEPc'; // <-- SUBSTITUA PELA SUA CHAVE
+    // Elementos do DOM
+    const sheetLinkInput = document.getElementById('sheetLink');
+    const carregarBtn = document.getElementById('carregarBtn');
+    const loadingDiv = document.getElementById('loading');
+    const erroDiv = document.getElementById('erro');
+    const dashboardDiv = document.getElementById('dashboard');
+    const topInfo = document.getElementById('topInfo');
+    const cardsContainer = document.getElementById('cardsContainer');
+    const tabelaHead = document.getElementById('tabelaHead').querySelector('tr');
+    const tabelaBody = document.getElementById('tabelaBody');
+    const lineChartsContainer = document.getElementById('lineChartsContainer');
+    let charts = {}; // Referências para os gráficos
+
+    // Função para extrair o ID da planilha de um link do Google Sheets
+    function extrairSheetId(url) {
+        const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        return match ? match[1] : null;
+    }
+
+    // Função para mostrar erro
+    function mostrarErro(mensagem) {
+        erroDiv.style.display = 'block';
+        erroDiv.textContent = mensagem;
+        loadingDiv.classList.remove('visible');
+        dashboardDiv.classList.remove('visible');
+    }
+
+    // Função para limpar erro
+    function limparErro() {
+        erroDiv.style.display = 'none';
+    }
+
+    // Função para carregar metadados da planilha
+    async function carregarMetadados(sheetId) {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?key=${API_KEY}`;
+        const resposta = await fetch(url);
+        if (!resposta.ok) {
+            throw new Error('Erro ao acessar metadados da planilha.');
+        }
+        const dados = await resposta.json();
+        return dados.sheets.map(sheet => sheet.properties.title).filter(title => /^\d{4}-\d{2}$/.test(title));
+    }
+
+    // Função para carregar dados de um range específico
+    async function carregarDados(sheetId, range) {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${API_KEY}`;
+        const resposta = await fetch(url);
+        if (!resposta.ok) {
+            throw new Error('Erro ao acessar os dados.');
+        }
+        const dados = await resposta.json();
+        return dados.values || [];
+    }
+
+    // Função para processar e exibir o dashboard
+    async function exibirDashboard(sheetId, monthlySheets) {
+        if (monthlySheets.length === 0) {
+            mostrarErro('Nenhuma aba mensal encontrada.');
+            return;
+        }
+
+        // Ordena abas mensais por data (descendente)
+        monthlySheets.sort((a, b) => b.localeCompare(a));
+        const currentSheet = monthlySheets[0];
+
+        // Carrega dados da aba atual
+        const dadosPrincipais = await carregarDados(sheetId, `${currentSheet}!A1:D1000`);
+        const resumo = await carregarDados(sheetId, `${currentSheet}!F3:G5`);
+        const distribuicao = await carregarDados(sheetId, `${currentSheet}!F8:H11`);
+        const despesasCat = await carregarDados(sheetId, `${currentSheet}!J3:K100`);
+        const fontesRenda = await carregarDados(sheetId, `${currentSheet}!M3:N100`);
+
+        // 1. Top info: Lucro/Despesa baseado em excedente e gasto com desejos (Lazer)
+        const excedente = parseFloat(resumo[2][1]) || 0;
+        const lazer = distribuicao.find(row => row[0] === 'Lazer')?.[2] || 0;
+        let lucroText = excedente >= 0 ? `Lucro mensal: R$ ${excedente.toFixed(2)}` : `Déficit mensal: R$ ${Math.abs(excedente).toFixed(2)}`;
+        topInfo.innerHTML = `<span>${lucroText}</span><span>Gasto disponível para desejos: R$ ${parseFloat(lazer).toFixed(2)}</span>`;
+
+        // 2. Cards (adaptados)
+        cardsContainer.innerHTML = '';
+        const cardReceitas = document.createElement('div');
+        cardReceitas.className = 'card';
+        cardReceitas.innerHTML = `<h3>📈 Receitas</h3><div class="valor">R$ ${parseFloat(resumo[0][1]).toFixed(2)}</div>`;
+        cardsContainer.appendChild(cardReceitas);
+
+        const cardDespesas = document.createElement('div');
+        cardDespesas.className = 'card';
+        cardDespesas.innerHTML = `<h3>📉 Despesas</h3><div class="valor">R$ ${Math.abs(parseFloat(resumo[1][1])).toFixed(2)}</div>`;
+        cardsContainer.appendChild(cardDespesas);
+
+        const cardExcedente = document.createElement('div');
+        cardExcedente.className = 'card';
+        cardExcedente.innerHTML = `<h3>💰 Excedente</h3><div class="valor">R$ ${excedente.toFixed(2)}</div>`;
+        cardsContainer.appendChild(cardExcedente);
+
+        // 3. Gráficos de pizza
+        // Despesas por categoria
+        const despesasLabels = despesasCat.map(row => row[0]).filter(Boolean);
+        const despesasValues = despesasCat.map(row => Math.abs(parseFloat(row[1]))).filter(Boolean);
+        if (charts.graficoDespesas) charts.graficoDespesas.destroy();
+        charts.graficoDespesas = new Chart(document.getElementById('graficoDespesas'), {
+            type: 'pie',
+            data: {
+                labels: despesasLabels,
+                datasets: [{ data: despesasValues, backgroundColor: ['#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d'] }]
+            },
+            options: { responsive: true, plugins: { title: { display: true, text: 'Despesas por Categoria', color: '#f1f5f9' }, legend: { labels: { color: '#f1f5f9' } } } }
+        });
+
+        // Fontes de renda
+        const rendasLabels = fontesRenda.map(row => row[0]).filter(Boolean);
+        const rendasValues = fontesRenda.map(row => parseFloat(row[1])).filter(Boolean);
+        if (charts.graficoRendas) charts.graficoRendas.destroy();
+        charts.graficoRendas = new Chart(document.getElementById('graficoRendas'), {
+            type: 'pie',
+            data: {
+                labels: rendasLabels,
+                datasets: [{ data: rendasValues, backgroundColor: ['#10b981', '#059669', '#34d399', '#6ee7b7'] }]
+            },
+            options: { responsive: true, plugins: { title: { display: true, text: 'Fontes de Renda', color: '#f1f5f9' }, legend: { labels: { color: '#f1f5f9' } } } }
+        });
+
+        // Balanço (Receitas vs Despesas)
+        if (charts.graficoBalanco) charts.graficoBalanco.destroy();
+        charts.graficoBalanco = new Chart(document.getElementById('graficoBalanco'), {
+            type: 'pie',
+            data: {
+                labels: ['Receitas', 'Despesas'],
+                datasets: [{ data: [parseFloat(resumo[0][1]), Math.abs(parseFloat(resumo[1][1]))], backgroundColor: ['#10b981', '#ef4444'] }]
+            },
+            options: { responsive: true, plugins: { title: { display: true, text: 'Receitas vs Despesas', color: '#f1f5f9' }, legend: { labels: { color: '#f1f5f9' } } } }
+        });
+
+        // 4. Tabela de dados brutos
+        const cabecalho = dadosPrincipais[0] || [];
+        tabelaHead.innerHTML = '';
+        cabecalho.forEach(titulo => {
+            const th = document.createElement('th');
+            th.textContent = titulo || '(sem nome)';
+            tabelaHead.appendChild(th);
+        });
+        tabelaBody.innerHTML = '';
+        const linhasExibicao = dadosPrincipais.slice(1, 11);
+        linhasExibicao.forEach(linha => {
+            const tr = document.createElement('tr');
+            for (let i = 0; i < cabecalho.length; i++) {
+                const td = document.createElement('td');
+                td.textContent = linha[i] !== undefined ? linha[i] : '';
+                tr.appendChild(td);
+            }
+            tabelaBody.appendChild(tr);
+        });
+
+        // 5. Gráficos de linha para receitas ao longo do tempo
+        lineChartsContainer.innerHTML = '';
+        // Coletar dados históricos de fontes de renda
+        const historicalData = {};
+        await Promise.all(monthlySheets.map(async sheet => {
+            const fontes = await carregarDados(sheetId, `${sheet}!M3:N100`);
+            fontes.forEach(row => {
+                if (row[0] && row[1]) {
+                    if (!historicalData[row[0]]) historicalData[row[0]] = {};
+                    historicalData[row[0]][sheet] = parseFloat(row[1]);
+                }
+            });
+        }));
+
+        // Para cada fonte, criar gráfico de linha
+        Object.keys(historicalData).forEach((fonte, index) => {
+            const div = document.createElement('div');
+            div.className = 'grafico-container';
+            const canvas = document.createElement('canvas');
+            canvas.id = `lineChart${index}`;
+            div.appendChild(canvas);
+            lineChartsContainer.appendChild(div);
+
+            const months = monthlySheets.sort(); // Ordena ascendente para o gráfico
+            const values = months.map(month => historicalData[fonte][month] || 0);
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{ label: fonte, data: values, borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.2)', fill: true }]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: `Evolução de ${fonte}`, color: '#f1f5f9' }, legend: { labels: { color: '#f1f5f9' } } }, scales: { x: { ticks: { color: '#d1d5db' } }, y: { ticks: { color: '#d1d5db' } } } }
+            });
+        });
+
+        // Mostra o dashboard
+        dashboardDiv.classList.add('visible');
+    }
+
+    // Evento do botão
+    carregarBtn.addEventListener('click', async () => {
+        const link = sheetLinkInput.value.trim();
+        if (!link) {
+            mostrarErro('Por favor, cole o link da planilha.');
+            return;
+        }
+        const sheetId = extrairSheetId(link);
+        if (!sheetId) {
+            mostrarErro('Link inválido. Certifique-se de que é um link do Google Sheets (contém /d/...).');
+            return;
+        }
+        // Limpa estados anteriores
+        limparErro();
+        dashboardDiv.classList.remove('visible');
+        loadingDiv.classList.add('visible');
+        carregarBtn.disabled = true;
+        try {
+            const monthlySheets = await carregarMetadados(sheetId);
+            await exibirDashboard(sheetId, monthlySheets);
+        } catch (error) {
+            mostrarErro(error.message);
+        } finally {
+            loadingDiv.classList.remove('visible');
+            carregarBtn.disabled = false;
+        }
+    });
+
+    // Opcional: permitir carregar com Enter
+    sheetLinkInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            carregarBtn.click();
+        }
+    });
+
+    // Mensagem inicial sobre a chave de API
+    if (API_KEY === 'AIzaSyCcz34zSm9E_H-42cXOMPhpZGgGjbvSEPc') {
+        console.warn('⚠️ Você precisa configurar sua chave de API do Google Sheets no código.');
+        mostrarErro('Configure sua chave de API no arquivo index.html (linha com API_KEY).');
+    }
+</script>
+</body>
+</html>
+```
